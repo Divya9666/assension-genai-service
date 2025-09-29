@@ -1,1 +1,40 @@
+name: "SAST Scan"
+on:
+  workflow_dispatch:
+  #push:
+  #  branches:
+  #    - "feature/**"
+  #    - main
+  #    - develop
+jobs:
+  build_and_test:
+    runs-on:
+      - nbi
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
+      - name: Install Maven
+        run: |
+          for i in {1..3}; do
+            sudo apt-get update && sudo apt-get install -y maven && break || sleep 10;
+          done
+      - name: Build with Maven
+        run: mvn clean verify
+      - name: Build
+        run: |
+          mvn clean install
+      - name: SonarQube Scan
+        uses: Deloitte-US-Engineering/sonar-scan-action@main
+        with:
+          SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+          SONAR_HOST_URL: https://sonar.tools.deloitteinnovation.us/
+          ORG_NAME: INT
+          JFROG_USERNAME: ${{ secrets.SVC_JFROG_USERNAME }}
+          JFROG_PASSWORD: ${{ secrets.SVC_JFROG_TOKEN }}
